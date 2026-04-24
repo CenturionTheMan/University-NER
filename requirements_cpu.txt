@@ -1,0 +1,10 @@
+numpy
+pandas
+kagglehub
+torch 
+torchvision
+datasets
+transformers
+evaluate
+seqeval
+accelerate
