@@ -8,3 +8,5 @@ transformers
 evaluate
 seqeval
 accelerate
+scikit-learn
+tqdm
