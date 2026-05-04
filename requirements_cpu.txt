@@ -10,3 +10,4 @@ seqeval
 accelerate
 scikit-learn
 tqdm
+python-dotenv
