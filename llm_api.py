@@ -1,17 +1,71 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 import requests
 import time
+from google import genai
+from google.genai import types
+import time
 
-
-class OpenRouterApi:
+class LLMApi(ABC):
     def __init__(self, key: str, model: str):
         if not key:
             raise ValueError("API key must be provided")
+        
         if not model:
             raise ValueError("Model must be provided")
 
         self.key = key
         self.model = model
+
+    @abstractmethod
+    def send_message(
+        self, message: str, is_reasoning: bool = False, temperature: float = 0.7, max_tokens: Optional[int] = 2048, attempts_amt: int = 5) -> str:
+        pass
+
+
+
+class GeminiApi(LLMApi):
+    def __init__(self, key: str, model: str = "gemini-2.5-flash-lite"):
+        super().__init__(key, model)
+        self.client = genai.Client(api_key=key)
+
+    def send_message(self, message: str, is_reasoning: bool = False, temperature: float = 0.7, max_tokens: int | None = 2048, attempts_amt: int = 5) -> str:
+
+        config = {
+            "temperature": temperature,
+        }
+
+        if max_tokens is not None:
+            config["max_output_tokens"] = max_tokens
+
+        if is_reasoning:
+            config["thinking_config"] = types.ThinkingConfig(thinking_budget=1024)
+
+        for attempt in range(attempts_amt):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=message,
+                    config=types.GenerateContentConfig(**config),
+                )
+
+                if response.text:
+                    return response.text.strip()
+
+                print("Empty Gemini response, retrying...")
+
+            except Exception as e:
+                wait = 2 ** attempt
+                print(f"Gemini API error: {e}. Retrying in {wait}s...")
+                time.sleep(wait)
+
+        raise Exception("Max retries exceeded")
+    
+
+
+class OpenRouterApi(LLMApi):
+    def __init__(self, key: str, model: str):
+        super().__init__(key, model)
 
     def send_message(self, message: str, is_reasoning: bool = False, temperature: float = 0.7, max_tokens: int|None = 2048, attempts_amt: int = 5) -> str:
         payload = {
