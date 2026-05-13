@@ -40,6 +40,10 @@ class OpenRouterApi:
 
             if response.status_code == 200:
                 data = response.json()
+                if "choices" not in data:
+                    print(f"Unexpected response (no 'choices'), retrying... ({data})")
+                    time.sleep(2 ** attempt)
+                    continue
                 content = data["choices"][0]["message"]["content"]
                 if content is None:
                     print(f"Empty response, retrying... ({data})")
